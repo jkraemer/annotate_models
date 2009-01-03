@@ -62,7 +62,16 @@ module AnnotateModels
       else
         col_type << "(#{col.limit})" if col.limit
       end
-      sprintf("#  %-#{max_size}.#{max_size}s:%-15.15s %s", col.name, col_type, attrs.join(", ")).rstrip
+      sprintf("#  %-#{max_size}.#{max_size}s:%-15.15s %-20.20s %s", col.name, col_type, attrs.join(", "), get_column_comment(col, klass)).rstrip
+  end
+
+  def self.get_column_comment(col, klass)
+    if klass.connection.class.name =~ /mysql/i
+      res = klass.connection.execute("show full columns from #{klass.table_name} where field='#{col.name}'")
+      if row = res.fetch_row
+        return row.last.gsub "\n", " "
+      end
+    end
   end
 
   # Add a schema block to a file. If the file already contains
